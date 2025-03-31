@@ -9,7 +9,7 @@ class Birthday(Field):
                 parse_date = datetime.strptime(value, "%d.%m.%Y").date()
                 super().__init__(parse_date)
             else:
-                raise ValueError("Value must be a non-empty string in DD.MM.YYY")
+                raise ValueError("Value must be a non-empty string in DD.MM.YYYY")
 
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
@@ -17,9 +17,3 @@ class Birthday(Field):
     @staticmethod
     def validate(value):
         return value is not None and isinstance(value, str)
-
-
-def parse_input(inputted_data: str):
-    command = inputted_data.split()
-    command = [word.lower().strip() for word in command]
-    return command

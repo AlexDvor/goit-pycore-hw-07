@@ -21,60 +21,73 @@ def add_contact(args, book: AddressBook):
 
 
 @input_error
-def change_contact(args, contacts: dict):
-    name, phone = args
-    if name in contacts:
-        contacts[name] = phone
-        return f"Contact {name} updated!"
-    else:
-        raise KeyError
+def change_contact(args, book: AddressBook):
+    name, old_phone, new_phone = args
+    record = book.find(name)
+    if not record:
+        return "Contact not found!"
+
+    if record.edit_phone(old_phone, new_phone):
+        return f"Contact {name} updated with new phone!"
+    return "Old phone number not found!"
 
 
 @input_error
-def show_phone(args, contacts: dict):
-    if not contacts:
-        return "Contact list is empty!"
-
+def show_phone(args, book):
     name = args[0]
-    if name in contacts:
-        return f"{name}: {contacts[name]}"
-    else:
-        raise KeyError
+    record = book.find(name)
+    if not record:
+        return "Contact not found!"
+
+    phones = [p.value for p in record.phones]
+    return (
+        f"Phone(s) for {name}: {', '.join(phones)}"
+        if phones
+        else "No phone number found!"
+    )
 
 
 @input_error
-def show_all(_, contacts):
-    if contacts:
-        return "\n".join([f"{name}: {phone}" for name, phone in contacts.items()])
-    else:
-        return "Your list is empty!"
+def show_all(_, book: AddressBook):
+    if not book.data:
+        return "Your address book is empty!"
+
+    return "\n".join([str(record) for record in book.data.values()])
 
 
+@input_error
 def add_birthday(args, book: AddressBook):
     name, birthday_date = args
     record = book.find(name)
-    if record:
-        record.add_birthday(birthday_date)
-        return f"Birthday for {name} added!"
-    else:
+    if not record:
         return "Contact not found!"
 
+    record.add_birthday(birthday_date)
+    return f"Birthday for {name} added!"
 
+
+@input_error
 def show_birthday(args, book: AddressBook):
     name = args[0]
     record = book.find(name)
-    if record and record.birthday:
-        return f"{name}'s birthday is on {record.birthday.value.strftime('%d.%m.%Y')}"
-    return "Contact not found or birthday not set!"
+    if not record:
+        return "Contact not found!"
+
+    if not record.birthday:
+        return f"No birthday found for {name}"
+
+    return f"{name}'s birthday: {record.birthday.value.strftime('%d.%m.%Y')}"
 
 
+@input_error
 def birthdays(_, book: AddressBook):
-    upcoming = book.get_upcoming_birthdays()
-    if not upcoming:
-        return "No upcoming birthdays this week."
+    upcoming_birthdays = book.get_upcoming_birthdays()
+    if upcoming_birthdays == "No upcoming birthdays.":
+        return upcoming_birthdays
+
     return "\n".join(
         [
-            f"{rec.name.value}: {rec.birthday.value.strftime('%d.%m.%Y')}"
-            for rec in upcoming
+            f"{record.name.value}: {record.birthday.value.strftime('%d.%m.%Y')}"
+            for record in upcoming_birthdays
         ]
     )
