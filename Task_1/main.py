@@ -1,5 +1,5 @@
 from collections import UserDict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class Field:
@@ -31,10 +31,11 @@ class Record:
     def __init__(self, name, birthday_date=None):
         self.name = Name(name)
         self.phones = []
-        self.birthday = Birthday(birthday_date)
+        self.birthday = Birthday(birthday_date) if birthday_date else None
 
     def __str__(self):
-        return f"Contact name: {self.name}, phones: {'; '.join(p.value for p in self.phones)}"
+        phones = "; ".join(p.value for p in self.phones)
+        return f"Contact name: {self.name}, phones: {phones}, birthday: {self.birthday}"
 
     def add_phone(self, phone):
         self.phones.append(Phone(phone))
@@ -60,9 +61,12 @@ class Record:
                 return p
         return None
 
+    def add_birthday(self, birthday_date):
+        self.birthday = Birthday(birthday_date)
+
 
 class AddressBook(UserDict):
-    def add_record(self, record):
+    def add_record(self, record: Record):
         self.data[record.name.value] = record
 
     def find(self, name):
@@ -71,34 +75,46 @@ class AddressBook(UserDict):
     def delete(self, name):
         return self.data.pop(name)
 
+    def get_upcoming_birthdays(self, days=7):
+        upcoming_birthdays = []
+        today = datetime.now().date()
+        end_date = today + timedelta(days=days)
+
+        for record in self.data.values():
+            if record.birthday:
+                birthday_this_year = record.birthday.value.replace(year=today.year)
+                if today <= birthday_this_year <= end_date:
+                    upcoming_birthdays.append(record)
+
+        return upcoming_birthdays
+
 
 class Birthday(Field):
     def __init__(self, value):
-        if value is None or not isinstance(value, str):
-            return
         try:
-            parse = datetime.strptime(value, "%d.%m.%Y").date()
-            print(f"date ------ {parse}")
+            if self.validate(value):
+                parse_date = datetime.strptime(value, "%d.%m.%Y").date()
+                super().__init__(parse_date)
+            else:
+                raise ValueError("Value must be a non-empty string in DD.MM.YYY")
 
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
 
-
-# class Record:
-#     def __init__(self, name):
-#         self.name = Name(name)
-#         self.phones = []
-#         self.birthday = None
+    @staticmethod
+    def validate(value):
+        return value is not None and isinstance(value, str)
 
 
 # ========================================================
 
 book = AddressBook()
 # john_record = Record("John", "1988.10.10")
-john_record = Record("John", "10.10.1988")
+john_record = Record("John", "02.04.1988")
 john_record.add_phone("1234567890")
 john_record.add_phone("5555555555")
-print(f"John_record :{john_record}")
+
+
 book.add_record(john_record)
 jane_record = Record("Jane")
 jane_record.add_phone("9876543210")
@@ -113,6 +129,10 @@ print(john)
 found_phone = john.find_phone("5555555555")
 print(f"{john.name}: {found_phone}")
 book.delete("Jane")
+br = book.get_upcoming_birthdays()
+
+for i in br:
+    print(f"The next br in this weak  --- {i}")
 
 
 """
