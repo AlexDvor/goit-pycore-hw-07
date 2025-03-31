@@ -5,7 +5,6 @@ from utils.parse_input import parse_input
 
 def main():
     book = AddressBook()
-    print(f"book ------ {book}")
     print("Welcome to the assistant bot!")
     while True:
         user_input = input("Enter a command: ")
